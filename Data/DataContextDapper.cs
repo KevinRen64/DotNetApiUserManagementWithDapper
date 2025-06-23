@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DotNetApi.Data
 {
-  
+
   // Dapper-based data context for executing SQL queries and commands
   class DataContextDapper
   {
@@ -55,9 +55,38 @@ namespace DotNetApi.Data
     public int ExecuteSqlWithRowCount(string sql)
     {
       IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-      
+
       // Execute the command and return the number of affected rows
       return dbConnection.Execute(sql);
+    }
+    
+    // Executes a SQL command with parameters
+    public bool ExecuteSqlWithParameters(string sql, List<SqlParameter> parameters)
+    {
+      // Create a new SQL command using the raw SQL query passed in
+      SqlCommand commandWithParams = new SqlCommand(sql);
+
+      // Add each parameter from the provided list to the command to safely pass values
+      foreach (SqlParameter parameter in parameters)
+      {
+        commandWithParams.Parameters.Add(parameter);  // Prevents SQL injection
+      }
+
+      // Create a new SQL connection using the connection string from configuration
+      SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+      dbConnection.Open();  // Open the database connection
+
+      // Assign the open connection to the SQL command
+      commandWithParams.Connection = dbConnection;
+
+      // Execute the SQL command (e.g., INSERT, UPDATE, DELETE), and get the number of rows affected
+      int rowsAffected = commandWithParams.ExecuteNonQuery();
+
+      // Close the connection after execution
+      dbConnection.Close();
+
+      // Return true if at least one row was affected, otherwise false
+      return rowsAffected > 0;
     }
 
   }

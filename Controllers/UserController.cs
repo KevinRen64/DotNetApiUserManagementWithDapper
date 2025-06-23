@@ -89,7 +89,6 @@ public class UserController : ControllerBase
     }
     // Throw exception if update failed
     throw new Exception("Failed to Update User");
-
   }
 
 
@@ -143,6 +142,92 @@ public class UserController : ControllerBase
     // Throw exception if insert failed
     throw new Exception("Failed to Remove User");
   }
-  
+
+
+
+  // Endpoint to get a list of all UsersSalary
+  [HttpGet("GetUsersSalary")]
+  public IEnumerable<UserSalary> GetUsersSalary()
+  {
+    string sql = @"
+      SELECT [UserId],
+        [Salary] 
+      FROM TutorialAppSchema.UserSalary";
+    // Executes the SQL and returns a list of users
+    IEnumerable<UserSalary> userSalaries = _dapper.LoadData<UserSalary>(sql);
+    return userSalaries;
+  }
+
+  // Endpoint to get a single user's salary
+  [HttpGet("GetUsersSalary/{userId}")]
+  public UserSalary GetUsersSalary(int userId)
+  {
+    string sql = @"
+      SELECT [UserId],
+        [Salary] 
+      FROM TutorialAppSchema.UserSalary
+      WHERE UserId = " + userId.ToString();
+    // Executes the SQL and returns a single user's salary
+    UserSalary userSalary = _dapper.LoadDataSingle<UserSalary>(sql);
+    return userSalary;
+  }
+
+  // PUT endpoint to edit/update an existing user
+  [HttpPut("EditUserSalary")]
+  public IActionResult EditUserSalary(UserSalary userSalary)
+  {
+    // SQL statement to update user data by UserId
+    // WARNING: This uses string concatenation which is vulnerable to SQL Injection attacks
+    string sql = @"
+  UPDATE TutorialAppSchema.UserSalary SET [Salary] ="
+      + userSalary.Salary
+      + " WHERE UserId =" + userSalary.UserId;
+
+    // Execute the update statement
+    if (_dapper.ExecuteSql(sql))
+    {
+      // Return HTTP 200 OK if update succeeded
+      return Ok();
+    }
+    // Throw exception if update failed
+    throw new Exception("Failed to Update User");
+  }
+
+
+  //POST endpoint to add a new user
+  [HttpPost("AddUserSalary")]
+  public IActionResult AddUserSalary(UserSalary userSalaryToAdd)
+  {
+    string sql = @"INSERT INTO TutorialAppSchema.UserSalary (
+        [UserId],
+        [Salary] 
+      ) VALUES ( " + userSalaryToAdd.UserId
+          + "," + userSalaryToAdd.Salary
+          + ")";
+
+    if (_dapper.ExecuteSql(sql))
+    {
+      // Return HTTP 200 OK if insert succeeded
+      return Ok();
+    }
+    // Throw exception if insert failed
+    throw new Exception("Failed to Add User");
+  }
+
+  //DELETE endpoint to remove a user
+  [HttpDelete("RemoveUserSalary/{userId}")]
+  public IActionResult RemoveUserSalary(int userId)
+  {
+    string sql = @"
+      DELETE FROM TutorialAppSchema.UserSalary
+      WHERE UserId = " + userId.ToString();
+
+    if (_dapper.ExecuteSql(sql))
+    {
+      return Ok();
+    }
+    throw new Exception("Failed to delete user's salary");
+  }
+
 }
 
