@@ -51,6 +51,19 @@ namespace DotNetApi.Controllers
               [PasswordSalt]) VALUES ('" + userForRegistration.Email +
               "', @PasswordHash, @PasswordSalt)";
 
+          /*
+            string sqlAddAuth = @"
+                INSERT INTO TutorialAppSchema.Auth (
+                    [Email],
+                    [PasswordHash],
+                    [PasswordSalt]
+                ) VALUES (
+                    @Email,
+                    @PasswordHash,
+                    @PasswordSalt
+                )";
+          */
+
           // Prepare the SQL parameters to prevent SQL injection for the hash and salt
           List<SqlParameter> sqlParameters = new List<SqlParameter>();
 
@@ -62,9 +75,16 @@ namespace DotNetApi.Controllers
           SqlParameter passwordHashParameter = new SqlParameter("@PasswordHash", SqlDbType.VarBinary);
           passwordHashParameter.Value = passwordHash;
 
+          // Create SqlParameter for email (NVarChar)
+          // SqlParameter emailParameter = new SqlParameter("@Email", SqlDbType.NVarChar);
+          // emailParameter.Value = userForRegistration.email;
+
           // Add parameters to the list
           sqlParameters.Add(passwordSaltParameter);
           sqlParameters.Add(passwordHashParameter);
+          //sqlParameters.Add(emailParameter);
+
+          
 
           // Execute the insert command with parameters
           if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters))
