@@ -1,4 +1,4 @@
-namespace DotNetApi.Models
+namespace DotNetApi.Dtos
 {
   public partial class UserForLoginConfirmationDto
   {
