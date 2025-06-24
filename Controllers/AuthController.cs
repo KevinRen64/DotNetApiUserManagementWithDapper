@@ -26,6 +26,8 @@ namespace DotNetApi.Controllers
       _config = config;
     }
 
+
+
     [AllowAnonymous]  // Allow unauthenticated access for registration
     [HttpPost("Register")]  // POST /auth/register
     public IActionResult Register(UserForRegistrationDto userForRegistration)
@@ -65,30 +67,15 @@ namespace DotNetApi.Controllers
               @PasswordSalt
               )";
 
-          // Prepare the SQL parameters to prevent SQL injection for the hash and salt
-          List<SqlParameter> sqlParameters = new List<SqlParameter>();
-
-          // Create SqlParameter for password salt (binary data)
-          SqlParameter passwordSaltParameter = new SqlParameter("@PasswordSalt", SqlDbType.VarBinary);
-          passwordSaltParameter.Value = passwordSalt;
-
-          // Create SqlParameter for password hash (binary data)
-          SqlParameter passwordHashParameter = new SqlParameter("@PasswordHash", SqlDbType.VarBinary);
-          passwordHashParameter.Value = passwordHash;
-
-          // Create SqlParameter for email (NVarChar)
-          SqlParameter emailParameter = new SqlParameter("@Email", SqlDbType.NVarChar);
-          emailParameter.Value = userForRegistration.Email;
-
-          // Add parameters to the list
-          sqlParameters.Add(passwordSaltParameter);
-          sqlParameters.Add(passwordHashParameter);
-          sqlParameters.Add(emailParameter);
-
-
+          var userParametersForAuth = new List<SqlParameter>
+            {
+              new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
+              new SqlParameter("@PasswordHash", SqlDbType.VarBinary) { Value = passwordHash },
+              new SqlParameter("@PasswordSalt", SqlDbType.VarBinary) { Value = passwordSalt }
+            };
 
           // Execute the insert command with parameters
-          if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, sqlParameters))
+          if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, userParametersForAuth))
           {
             string sqlAddUser = @"INSERT INTO TutorialAppSchema.Users (
                     [FirstName],
@@ -96,15 +83,19 @@ namespace DotNetApi.Controllers
                     [Email],
                     [Gender],
                     [Active] 
-                  ) VALUES ( " +
-                  "'" + userForRegistration.FirstName +
-                  "', '" + userForRegistration.LastName +
-                  "', '" + userForRegistration.Email +
-                  "', '" + userForRegistration.Gender +
-              "', 1)";
-            if (_dapper.ExecuteSql(sqlAddUser))
+                  ) VALUES (@FirstName, @LastName, @Email, @Gender, @Active)";
+
+            var userParameters = new List<SqlParameter>
             {
-              return Ok();  // Return 200 OK if registration succeeded
+              new SqlParameter("@FirstName", SqlDbType.NVarChar) { Value = userForRegistration.FirstName },
+              new SqlParameter("@LastName", SqlDbType.NVarChar) { Value = userForRegistration.LastName },
+              new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
+              new SqlParameter("@Gender", SqlDbType.NVarChar) { Value = userForRegistration.Gender },
+              new SqlParameter("@Active", SqlDbType.Bit) { Value = 1 }
+            };
+            if (_dapper.ExecuteSqlWithParameters(sqlAddUser, userParameters))
+            {
+              return Ok("User registered successfully.");  // Return 200 OK if registration succeeded
             }
             throw new Exception("Failed to add user.");
           }
@@ -113,7 +104,6 @@ namespace DotNetApi.Controllers
         throw new Exception("User with this email already exist!");  // If the user already exists, throw an error
       }
       throw new Exception("Password do not match!");   // If passwords don't match, throw an error
-
     }
 
 
