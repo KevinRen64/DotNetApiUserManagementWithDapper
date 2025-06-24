@@ -44,23 +44,15 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
      UserId INT IDENTITY(1,1) PRIMARY KEY,
      FirstName NVARCHAR(50),
      LastName NVARCHAR(50),
-     Email NVARCHAR(100),
-     Gender NVARCHAR(10),
+     Email NVARCHAR(50),
+     Gender NVARCHAR(50),
      Active BIT
    );
 
-   CREATE TABLE TutorialAppSchema.UserSalary (
-     UserId INT PRIMARY KEY,
-     Salary DECIMAL(18, 2),
-     FOREIGN KEY (UserId) REFERENCES TutorialAppSchema.Users(UserId)
-   );
-
    CREATE TABLE TutorialAppSchema.Auth (
-     UserId INT PRIMARY KEY,
-     Email NVARCHAR(100),
+     Email NVARCHAR(50),
      PasswordHash VARBINARY(MAX),
      PasswordSalt VARBINARY(MAX),
-     FOREIGN KEY (UserId) REFERENCES TutorialAppSchema.Users(UserId)
    );
 4. **Build and run the project**
    ```bash

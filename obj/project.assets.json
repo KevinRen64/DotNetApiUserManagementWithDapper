@@ -2584,11 +2584,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Junzhang Ren\\source\\repos\\DotnetApi\\DotnetApi.csproj",
+      "projectUniqueName": "C:\\Users\\Junzhang Ren\\UserManagement\\DotnetApi.csproj",
       "projectName": "DotnetApi",
-      "projectPath": "C:\\Users\\Junzhang Ren\\source\\repos\\DotnetApi\\DotnetApi.csproj",
+      "projectPath": "C:\\Users\\Junzhang Ren\\UserManagement\\DotnetApi.csproj",
       "packagesPath": "C:\\Users\\Junzhang Ren\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Junzhang Ren\\source\\repos\\DotnetApi\\obj\\",
+      "outputPath": "C:\\Users\\Junzhang Ren\\UserManagement\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Junzhang Ren\\AppData\\Roaming\\NuGet\\NuGet.Config",
