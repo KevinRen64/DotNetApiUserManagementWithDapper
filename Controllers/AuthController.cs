@@ -36,7 +36,7 @@ namespace DotNetApi.Controllers
         // SQL query to check if the email already exists in the database
         string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = '" + userForRegistration.Email + "'";
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = '@Email";
+        string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = @Email";
         // Execute the SQL query using Dapper and get list of existing emails
         IEnumerable<string> existingUsers = _dapper.LoadData<string>(sqlCheckUserExists);
         // If no matching email found, proceed with registration
