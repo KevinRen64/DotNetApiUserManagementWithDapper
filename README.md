@@ -38,13 +38,37 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
       "DefaultConnection": "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;"
     }
 3. **Run database migrations or create the required tables manually**
-   (database schema or migration instructions)
+   ```bash
+   CREATE TABLE TutorialAppSchema.Users (
+     UserId INT IDENTITY(1,1) PRIMARY KEY,
+     FirstName NVARCHAR(50),
+     LastName NVARCHAR(50),
+     Email NVARCHAR(100),
+     Gender NVARCHAR(10),
+     Active BIT
+   );
+
+   CREATE TABLE TutorialAppSchema.UserSalary (
+     UserId INT PRIMARY KEY,
+     Salary DECIMAL(18, 2),
+     FOREIGN KEY (UserId) REFERENCES TutorialAppSchema.Users(UserId)
+   );
+
+   CREATE TABLE TutorialAppSchema.Auth (
+     UserId INT PRIMARY KEY,
+     Email NVARCHAR(100),
+     PasswordHash VARBINARY(MAX),
+     PasswordSalt VARBINARY(MAX),
+     FOREIGN KEY (UserId) REFERENCES TutorialAppSchema.Users(UserId)
+   );
 4. **Build and run the project**
    ```bash
    dotnet build
    dotnet run
 5. **Test the API**
    Use Swagger UI or Postman to explore and test the API endpoints below:
+   
+   User Management
    | HTTP Method | Endpoint                      | Description                   |
    | ----------- | ----------------------------- | ----------------------------- |
    | GET         | `/User/TestConnection`        | Tests database connectivity   |
@@ -53,11 +77,21 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
    | POST        | `/User/AddUser`               | Adds a new user               |
    | PUT         | `/User/EditUser`              | Updates an existing user      |
    | DELETE      | `/User/DeleteUser/{id}`       | Deletes a user by userId      |
+
+   Salary Management
+   | HTTP Method | Endpoint                      | Description                   |
+   | ----------- | ----------------------------- | ----------------------------- |
    | GET         | `/User/GetUsersSalary`        | Retrieves all users’ salaries |
    | GET         | `/User/GetUsersSalary/{id}`   | Retrieves salary by userId    |
    | POST        | `/User/AddUserSalary`         | Adds salary record for a user |
    | PUT         | `/User/EditUserSalary`        | Updates salary for a user     |
    | DELETE      | `/User/RemoveUserSalary/{id}` | Deletes salary by userId      |
+
+   Auth Management
+   | HTTP Method | Endpoint                      | Description                           |
+   | ----------- | ----------------------------- | -----------------------------         |
+   | POST        | `/Auth/Register` | Registers a new user and stores hashed credentials |
+   | POST        | `/Auth/Login`    | Verifies credentials and returns success or error  |
 
 
 ## Project Structure
