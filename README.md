@@ -78,15 +78,6 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
    | PUT         | `/User/EditUser`              | Updates an existing user      |
    | DELETE      | `/User/DeleteUser/{id}`       | Deletes a user by userId      |
 
-   Salary Management
-   | HTTP Method | Endpoint                      | Description                   |
-   | ----------- | ----------------------------- | ----------------------------- |
-   | GET         | `/User/GetUsersSalary`        | Retrieves all users’ salaries |
-   | GET         | `/User/GetUsersSalary/{id}`   | Retrieves salary by userId    |
-   | POST        | `/User/AddUserSalary`         | Adds salary record for a user |
-   | PUT         | `/User/EditUserSalary`        | Updates salary for a user     |
-   | DELETE      | `/User/RemoveUserSalary/{id}` | Deletes salary by userId      |
-
    Auth Management
    | HTTP Method | Endpoint                      | Description                           |
    | ----------- | ----------------------------- | -----------------------------         |
