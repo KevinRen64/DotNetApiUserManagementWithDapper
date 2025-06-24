@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using DotNetApi.Data;
 using DotNetApi.Dtos;
-using DotNetApi.Models;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -45,24 +44,18 @@ namespace DotNetApi.Controllers
           // Call the GetPasswordHash() to hash the password by combining it with the salt and app secret key
           byte[] passwordHash = GetPasswordHash(userForRegistration.Password, passwordSalt);
 
-          // SQL command to insert the new user into the Auth table
-          string sqlAddAuth = @"INSERT INTO TutorialAppSchema.Auth([Email],
+           // SQL command to insert the new user into the Auth table
+          string sqlAddAuth = @"
+          INSERT INTO TutorialAppSchema.Auth (
+              [Email],
               [PasswordHash],
-              [PasswordSalt]) VALUES ('" + userForRegistration.Email +
-              "', @PasswordHash, @PasswordSalt)";
-
-          /*
-            string sqlAddAuth = @"
-                INSERT INTO TutorialAppSchema.Auth (
-                    [Email],
-                    [PasswordHash],
-                    [PasswordSalt]
-                ) VALUES (
-                    @Email,
-                    @PasswordHash,
-                    @PasswordSalt
-                )";
-          */
+              [PasswordSalt]
+              ) VALUES (
+              @Email,
+              @PasswordHash,
+              @PasswordSalt
+              )";
+          
 
           // Prepare the SQL parameters to prevent SQL injection for the hash and salt
           List<SqlParameter> sqlParameters = new List<SqlParameter>();
@@ -76,13 +69,13 @@ namespace DotNetApi.Controllers
           passwordHashParameter.Value = passwordHash;
 
           // Create SqlParameter for email (NVarChar)
-          // SqlParameter emailParameter = new SqlParameter("@Email", SqlDbType.NVarChar);
-          // emailParameter.Value = userForRegistration.email;
+          SqlParameter emailParameter = new SqlParameter("@Email", SqlDbType.NVarChar);
+          emailParameter.Value = userForRegistration.Email;
 
           // Add parameters to the list
           sqlParameters.Add(passwordSaltParameter);
           sqlParameters.Add(passwordHashParameter);
-          //sqlParameters.Add(emailParameter);
+          sqlParameters.Add(emailParameter);
 
           
 
