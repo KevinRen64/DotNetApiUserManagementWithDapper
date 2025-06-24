@@ -33,78 +33,80 @@ namespace DotNetApi.Controllers
     public IActionResult Register(UserForRegistrationDto userForRegistration)
     {
       // Check if password and password confirmation match
-      if (userForRegistration.Password == userForRegistration.PasswordConfirm)
+      if (userForRegistration.Password != userForRegistration.PasswordConfirm)
       {
-        // SQL query to check if the email already exists in the database
-        //string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = '" + userForRegistration.Email + "'";
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = @Email";
-        var emailParam = new { Email = userForRegistration.Email };
-        // Execute the SQL query using Dapper and get list of existing emails
-        IEnumerable<string> existingUsers = _dapper.LoadDataWithParameters<string>(sqlCheckUserExists, emailParam);
-        // If no matching email found, proceed with registration
-        if (existingUsers.Count() == 0)
-        {
-          // Create a random salt using a secure random number generator
-          byte[] passwordSalt = new byte[128 / 8];
-          using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-          {
-            rng.GetNonZeroBytes(passwordSalt);  // Fill the salt with non-zero random bytes
-          }
-
-          // Call the GetPasswordHash() to hash the password by combining it with the salt and app secret key
-          byte[] passwordHash = GetPasswordHash(userForRegistration.Password, passwordSalt);
-
-          // SQL command to insert the new user into the Auth table
-          string sqlAddAuth = @"
-          INSERT INTO TutorialAppSchema.Auth (
-              [Email],
-              [PasswordHash],
-              [PasswordSalt]
-              ) VALUES (
-              @Email,
-              @PasswordHash,
-              @PasswordSalt
-              )";
-
-          var userParametersForAuth = new List<SqlParameter>
-            {
-              new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
-              new SqlParameter("@PasswordHash", SqlDbType.VarBinary) { Value = passwordHash },
-              new SqlParameter("@PasswordSalt", SqlDbType.VarBinary) { Value = passwordSalt }
-            };
-
-          // Execute the insert command with parameters
-          if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, userParametersForAuth))
-          {
-            string sqlAddUser = @"INSERT INTO TutorialAppSchema.Users (
-                    [FirstName],
-                    [LastName],
-                    [Email],
-                    [Gender],
-                    [Active] 
-                  ) VALUES (@FirstName, @LastName, @Email, @Gender, @Active)";
-
-            var userParameters = new List<SqlParameter>
-            {
-              new SqlParameter("@FirstName", SqlDbType.NVarChar) { Value = userForRegistration.FirstName },
-              new SqlParameter("@LastName", SqlDbType.NVarChar) { Value = userForRegistration.LastName },
-              new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
-              new SqlParameter("@Gender", SqlDbType.NVarChar) { Value = userForRegistration.Gender },
-              new SqlParameter("@Active", SqlDbType.Bit) { Value = 1 }
-            };
-            if (_dapper.ExecuteSqlWithParameters(sqlAddUser, userParameters))
-            {
-              return Ok("User registered successfully.");  // Return 200 OK if registration succeeded
-            }
-            throw new Exception("Failed to add user.");
-          }
-          throw new Exception("Failed to register user.");   // If insert failed, throw an error
-        }
-        throw new Exception("User with this email already exist!");  // If the user already exists, throw an error
+        throw new Exception("Password do not match!");   // If passwords don't match, throw an error
       }
-      throw new Exception("Password do not match!");   // If passwords don't match, throw an error
+      
+      // Check if email already exists
+      string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = @Email";
+      var emailParam = new { Email = userForRegistration.Email };
+      IEnumerable<string> existingUsers = _dapper.LoadDataWithParameters<string>(sqlCheckUserExists, emailParam);
+      if (existingUsers.Any())
+      {
+          return Conflict("A user with this email already exists.");
+      }
+
+      // Generate salt
+      byte[] passwordSalt = new byte[128 / 8];
+      using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+      {
+        rng.GetNonZeroBytes(passwordSalt);  // Fill the salt with non-zero random bytes
+      }
+
+      // Call the GetPasswordHash() to hash the password
+      byte[] passwordHash = GetPasswordHash(userForRegistration.Password, passwordSalt);
+
+      // Insert into Auth table
+      string sqlAddAuth = @"
+      INSERT INTO TutorialAppSchema.Auth (
+          [Email],
+          [PasswordHash],
+          [PasswordSalt]
+          ) VALUES (
+          @Email,
+          @PasswordHash,
+          @PasswordSalt
+          )";
+
+      var userParametersForAuth = new List<SqlParameter>
+        {
+          new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
+          new SqlParameter("@PasswordHash", SqlDbType.VarBinary) { Value = passwordHash },
+          new SqlParameter("@PasswordSalt", SqlDbType.VarBinary) { Value = passwordSalt }
+        };
+
+      // Execute the insert command with parameters
+      if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, userParametersForAuth))
+      {
+        string sqlAddUser = @"INSERT INTO TutorialAppSchema.Users (
+                [FirstName],
+                [LastName],
+                [Email],
+                [Gender],
+                [Active] 
+              ) VALUES (@FirstName, @LastName, @Email, @Gender, @Active)";
+
+        var userParameters = new List<SqlParameter>
+        {
+          new SqlParameter("@FirstName", SqlDbType.NVarChar) { Value = userForRegistration.FirstName },
+          new SqlParameter("@LastName", SqlDbType.NVarChar) { Value = userForRegistration.LastName },
+          new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
+          new SqlParameter("@Gender", SqlDbType.NVarChar) { Value = userForRegistration.Gender },
+          new SqlParameter("@Active", SqlDbType.Bit) { Value = 1 }
+        };
+        if (_dapper.ExecuteSqlWithParameters(sqlAddUser, userParameters))
+        {
+          return Ok("User registered successfully.");  // Return 200 OK if registration succeeded
+        }
+        throw new Exception("Failed to add user.");
+      }
+      throw new Exception("Failed to register user.");   // If insert failed, throw an error
     }
+
+      
+    
+
 
 
     [AllowAnonymous]
