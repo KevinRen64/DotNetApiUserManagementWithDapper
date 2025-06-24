@@ -1,4 +1,5 @@
-using DotNetApi.Data;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,8 @@ builder.Services.AddCors((options) =>
                     .AllowCredentials();
             });
     });
+
+
 
 var app = builder.Build();
 

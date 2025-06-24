@@ -39,6 +39,15 @@ namespace DotNetApi.Data
       return dbConnection.QuerySingle<T>(sql);
     }
 
+public T LoadDataSingleWithParameters<T>(string sql, object parameters)
+{
+    using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+    {
+        return dbConnection.QuerySingle<T>(sql, parameters);
+    }
+}
+
+
 
     // Executes a SQL command that does not return data (e.g., INSERT, UPDATE, DELETE)
     // Returns true if at least one row was affected
