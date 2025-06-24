@@ -112,14 +112,12 @@ namespace DotNetApi.Controllers
     [HttpPost("Login")]  // POST /auth/login
     public IActionResult Login(UserForLoginDto userForLogin)
     {
-      var parameters = new { Email = userForLogin.Email };
-
       //1. Query for password hash and salt for this email
       string sqlForHashAndSalt = @"SELECT 
             [PasswordHash],
             [PasswordSalt] FROM TutorialAppSchema.Auth WHERE Email = @Email";
-
-      UserForLoginConfirmationDto userForLoginConfirmation = _dapper.LoadDataSingleWithParameters<UserForLoginConfirmationDto>(sqlForHashAndSalt, parameters);
+      var parameter = new { Email = userForLogin.Email };
+      UserForLoginConfirmationDto userForLoginConfirmation = _dapper.LoadDataSingleWithParameters<UserForLoginConfirmationDto>(sqlForHashAndSalt, parameter);
       
       if (userForLoginConfirmation == null)
       {
@@ -141,7 +139,7 @@ namespace DotNetApi.Controllers
 
       //4. Get the user's ID
       string userIdSql = "SELECT UserId FROM TutorialAppSchema.Users WHERE Email = @Email";
-      int userId = _dapper.LoadDataSingleWithParameters<int>(userIdSql, parameters);
+      int userId = _dapper.LoadDataSingleWithParameters<int>(userIdSql, parameter);
 
       //5. Return JWT token on successful login
       return Ok(new Dictionary<string, string>
@@ -159,8 +157,9 @@ namespace DotNetApi.Controllers
       string userId = User.FindFirst("userId")?.Value + "";
 
       // 2. Confirm user exists
-      string userIdSql = "SELECT userId FROM TutorialAppSchema.Users WHERE UserId = " + userId;
-      int userIdFromDb = _dapper.LoadDataSingle<int>(userIdSql);
+      string userIdSql = "SELECT userId FROM TutorialAppSchema.Users WHERE UserId = @UserId";
+      var parameter = new { UserId = userId };
+      int userIdFromDb = _dapper.LoadDataSingleWithParameters<int>(userIdSql, parameter);
 
       // 3. Return new JWT token
       return Ok(new Dictionary<string, string>
