@@ -39,13 +39,23 @@ namespace DotNetApi.Data
       return dbConnection.QuerySingle<T>(sql);
     }
 
-public T LoadDataSingleWithParameters<T>(string sql, object parameters)
-{
-      using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
-      {
-        return dbConnection.QuerySingleOrDefault<T>(sql, parameters);
+    //Returns a single record (one row) from the database
+    public T LoadDataSingleWithParameters<T>(string sql, object parameters)
+    {
+          using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+          {
+            return dbConnection.QuerySingleOrDefault<T>(sql, parameters);
+        }
     }
-}
+
+    // Returns multiple records (zero or more rows) from the database.
+    public IEnumerable<T> LoadDataWithParameters<T>(string sql, object parameters)
+    {
+        using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+        {
+            return dbConnection.Query<T>(sql, parameters);
+        }
+    }
 
 
 
