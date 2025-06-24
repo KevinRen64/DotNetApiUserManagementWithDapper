@@ -72,7 +72,6 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
    User Management
    | HTTP Method | Endpoint                      | Description                   |
    | ----------- | ----------------------------- | ----------------------------- |
-   | GET         | `/User/TestConnection`        | Tests database connectivity   |
    | GET         | `/User/GetUsers`              | Retrieves all users           |
    | GET         | `/User/GetUsers/{id}`         | Retrieves a user by userId    |
    | POST        | `/User/AddUser`               | Adds a new user               |
