@@ -96,11 +96,10 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
 
 
 ## Project Structure
-
+   ```bash
    DotNetApiUserManagementWithDapper/
    │
    ├── Controllers/        # UserController, AuthController
-   
    ├── Data/               # Dapper DB context
    ├── Dtos/               # DTOs for safe data transfer
    ├── Models/             # DB entity models
