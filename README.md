@@ -1,4 +1,4 @@
-# DotNetApiUserManagementWithDapper
+# UserManagement
 
 A RESTful API for user management built with .NET Core and Dapper. This project demonstrates a clean and efficient way to perform CRUD operations using Dapper as the micro-ORM for data access.
 
