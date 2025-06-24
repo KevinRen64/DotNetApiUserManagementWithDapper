@@ -188,3 +188,4 @@ C:\Users\Junzhang Ren\UserManagement\obj\Debug\net8.0\scopedcss\bundle\DotnetApi
 C:\Users\Junzhang Ren\UserManagement\obj\Debug\net8.0\DotnetApi.csproj.Up2Date
 C:\Users\Junzhang Ren\UserManagement\obj\Debug\net8.0\DotnetApi.genruntimeconfig.cache
 C:\Users\Junzhang Ren\UserManagement\obj\Debug\net8.0\ref\DotnetApi.dll
+C:\Users\Junzhang Ren\UserManagement\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

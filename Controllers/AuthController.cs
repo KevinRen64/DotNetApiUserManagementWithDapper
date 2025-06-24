@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using DotNetApi.Data;
 using DotNetApi.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -12,18 +13,21 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DotNetApi.Controllers
 {
+  [Authorize]   // Require authentication by default for all endpoints in this controller
+  [ApiController]  // Enables automatic model validation and better routing
+  [Route("[controller]")]  // Route pattern; this will be '/auth' because the controller is named AuthController
   public class AuthController : ControllerBase
   {
-    private readonly DataContextDapper _dapper;
-    private readonly IConfiguration _config;
-    public AuthController(IConfiguration config)
+    private readonly DataContextDapper _dapper;  // Dapper database context
+    private readonly IConfiguration _config;  // Access to appsettings.json
+    public AuthController(IConfiguration config)   // Initialize Dapper with config
     {
       _dapper = new DataContextDapper(config);
       _config = config;
     }
 
-
-    [HttpPost("Register")]
+    [AllowAnonymous]  // Allow unauthenticated access for registration
+    [HttpPost("Register")]  // POST /auth/register
     public IActionResult Register(UserForRegistrationDto userForRegistration)
     {
       // Check if password and password confirmation match
@@ -58,7 +62,6 @@ namespace DotNetApi.Controllers
               @PasswordHash,
               @PasswordSalt
               )";
-
 
           // Prepare the SQL parameters to prevent SQL injection for the hash and salt
           List<SqlParameter> sqlParameters = new List<SqlParameter>();
@@ -112,28 +115,28 @@ namespace DotNetApi.Controllers
     }
 
 
-
-    [HttpPost("Login")]
+    [AllowAnonymous]
+    [HttpPost("Login")]  // POST /auth/login
     public IActionResult Login(UserForLoginDto userForLogin)
     {
       var parameters = new { Email = userForLogin.Email };
 
-      // SQL query to retrieve the password hash and salt for the given email
-      // string sqlForHashAndSalt = @"SELECT 
-      //       [PasswordHash],
-      //       [PasswordSalt] FROM TutorialAppSchema.Auth WHERE Email = '" +
-      //       userForLogin.Email + "'";
+      //1. Query for password hash and salt for this email
       string sqlForHashAndSalt = @"SELECT 
             [PasswordHash],
             [PasswordSalt] FROM TutorialAppSchema.Auth WHERE Email = @Email";
 
-      // Execute the query and get a single UserForLoginConfirmationDto containing hash and salt
       UserForLoginConfirmationDto userForLoginConfirmation = _dapper.LoadDataSingleWithParameters<UserForLoginConfirmationDto>(sqlForHashAndSalt, parameters);
+      
+      if (userForLoginConfirmation == null)
+      {
+        return StatusCode(401, "Invalid Email");  // Email not found
+      }
 
-      // Recompute the password hash with the provided password and stored salt
+      //2. Recalculate hash with the provided password and stored salt
       byte[] passwordHash = GetPasswordHash(userForLogin.Password, userForLoginConfirmation.PasswordSalt);
 
-      // Compare the computed hash byte-by-byte with the stored hash
+      //3. Compare hashes byte by byte
       for (int index = 0; index < passwordHash.Length; index++)
       {
         // If any byte does not match, return HTTP 401 Unauthorized with "Incorrect Password"
@@ -143,11 +146,11 @@ namespace DotNetApi.Controllers
         }
       }
 
+      //4. Get the user's ID
       string userIdSql = "SELECT UserId FROM TutorialAppSchema.Users WHERE Email = @Email";
-
       int userId = _dapper.LoadDataSingleWithParameters<int>(userIdSql, parameters);
 
-      // If all bytes match, return HTTP 200 OK indicating successful login
+      //5. Return JWT token on successful login
       return Ok(new Dictionary<string, string>
       {
         {"token", CreateToken(userId)}
@@ -156,19 +159,39 @@ namespace DotNetApi.Controllers
 
 
 
+    [HttpGet("RefreshToken")]  // GET /auth/refreshToken
+    public IActionResult RefreshToken()
+    {
+      // 1. Extract user ID from JWT claims
+      string userId = User.FindFirst("userId")?.Value + "";
+
+      // 2. Confirm user exists
+      string userIdSql = "SELECT userId FROM TutorialAppSchema.Users WHERE UserId = " + userId;
+      int userIdFromDb = _dapper.LoadDataSingle<int>(userIdSql);
+
+      // 3. Return new JWT token
+      return Ok(new Dictionary<string, string>
+      {
+        {"token", CreateToken(userIdFromDb)}
+      });
+    }
+
+
+
+
     // Helper method to hash a password with salt and app secret key using PBKDF2
     private byte[] GetPasswordHash(string password, byte[] passwordSalt)
     {
-      // Get the app secret key from configuration and append the salt as a base64 string
+      // Combine salt and a secret password key from appsettings.json
       string passwordSaltPlusString = _config.GetSection("AppSettings:PasswordKey").Value + Convert.ToBase64String(passwordSalt);
 
-      // Use PBKDF2 to hash the password with the combined salt and secret key
+      // PBKDF2 hashing with HMACSHA256
       return KeyDerivation.Pbkdf2(
         password: password,
-        salt: Encoding.ASCII.GetBytes(passwordSaltPlusString),  // Salt bytes
-        prf: KeyDerivationPrf.HMACSHA256,  // Pseudorandom function used (HMACSHA256)
-        iterationCount: 1000000,  // Number of hashing iterations (very secure)
-        numBytesRequested: 256 / 8  // Length of resulting hash (32 bytes)
+        salt: Encoding.ASCII.GetBytes(passwordSaltPlusString),  
+        prf: KeyDerivationPrf.HMACSHA256,  
+        iterationCount: 1000000,  // Secure number of iterations
+        numBytesRequested: 256 / 8  // 32-byte output
       );
     }
 
@@ -176,38 +199,38 @@ namespace DotNetApi.Controllers
     // Method to create a JWT token for a given userId
     private string CreateToken(int userId)
     {
-      // Define the claims for the token. These are the pieces of information that will be embedded in the token.
+      // 1. Define claims for the token
       Claim[] claims = new Claim[] {
-        new Claim("userId", userId.ToString())  // Adds a custom claim "userId" with the value of the user's ID
+        new Claim("userId", userId.ToString())  // Custom userId claim
       };
 
-      // Create a symmetric security key using a secret key stored in appsettings.json.
-      // This key is used to digitally sign the token so it can be verified later.
+      // 2. Create security key using secret from config
       string? tokenKeyString = _config.GetSection("Appsettings:TokenKey").Value;
       SymmetricSecurityKey tokenKey = new SymmetricSecurityKey(
           Encoding.UTF8.GetBytes(
-            tokenKeyString != null? tokenKeyString: ""
+            tokenKeyString != null ? tokenKeyString : ""
           )
         );
-      // Create signing credentials using the security key and HMAC SHA512 algorithm.
-      // This tells the token generator how to sign the token.
+
+      // 3. Create signing credentials
       SigningCredentials credentials = new SigningCredentials(
           tokenKey,
           SecurityAlgorithms.HmacSha512Signature
         );
-      // Create a token descriptor that includes the claims, signing credentials, and expiration time.
+
+      // 4. Define token details
       SecurityTokenDescriptor descriptor = new SecurityTokenDescriptor()
       {
         Subject = new ClaimsIdentity(claims),
         SigningCredentials = credentials,
-        Expires = DateTime.Now.AddDays(1)
+        Expires = DateTime.Now.AddDays(1)   // Token expires in 1 day
       };
-      // Initialize the JWT token handler. This class handles the creation and validation of JWTs.
+      
+      // 5. Generate token
       JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-      // Create the token based on the descriptor.
       SecurityToken token = tokenHandler.CreateToken(descriptor);
-      // Convert the token to a string so it can be returned to the client.
-      return tokenHandler.WriteToken(token);
+
+      return tokenHandler.WriteToken(token);  // Return token as string
     }
   }
 }

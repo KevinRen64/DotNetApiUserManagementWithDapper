@@ -41,9 +41,9 @@ namespace DotNetApi.Data
 
 public T LoadDataSingleWithParameters<T>(string sql, object parameters)
 {
-    using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
-    {
-        return dbConnection.QuerySingle<T>(sql, parameters);
+      using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+      {
+        return dbConnection.QuerySingleOrDefault<T>(sql, parameters);
     }
 }
 
