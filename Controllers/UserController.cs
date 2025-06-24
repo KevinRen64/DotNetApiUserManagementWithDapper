@@ -19,15 +19,6 @@ public class UserController : ControllerBase
     _dapper = new DataContextDapper(config);
   }
 
-
-  // Simple test endpoint to verify the database connection
-  [HttpGet("TestConnection")]
-  public DateTime TestConnection()
-  {
-    return _dapper.LoadDataSingle<DateTime>("SELECT GETDATE()");
-  }
-
-
   // Endpoint to get a list of all users
   [HttpGet("GetUsers")]
   public IEnumerable<User> GetUsers()
