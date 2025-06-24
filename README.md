@@ -33,7 +33,7 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
    cd DotNetApiUserManagementWithDapper
 2. **Configure your database connection**
    Update the appsettings.json file with your database connection string:
-
+   ```bash
     "ConnectionStrings": {
       "DefaultConnection": "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;"
     }
