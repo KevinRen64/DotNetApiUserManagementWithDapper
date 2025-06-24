@@ -6,7 +6,6 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
 
 - User registration and management (Create, Read, Update, Delete)
 - Uses Dapper for fast and lightweight database interaction
-- Implements repository pattern for clean code organization
 - Authentication endpoints (login, token validation, etc.)
 - Built with .NET Core Web API
 - Connects to a relational database (e.g., SQL Server)
