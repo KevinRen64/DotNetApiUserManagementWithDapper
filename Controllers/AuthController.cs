@@ -77,38 +77,37 @@ namespace DotNetApi.Controllers
         };
 
       // Execute the insert command with parameters
-      if (_dapper.ExecuteSqlWithParameters(sqlAddAuth, userParametersForAuth))
+      if (!_dapper.ExecuteSqlWithParameters(sqlAddAuth, userParametersForAuth))
       {
-        string sqlAddUser = @"INSERT INTO TutorialAppSchema.Users (
-                [FirstName],
-                [LastName],
-                [Email],
-                [Gender],
-                [Active] 
-              ) VALUES (@FirstName, @LastName, @Email, @Gender, @Active)";
-
-        var userParameters = new List<SqlParameter>
-        {
-          new SqlParameter("@FirstName", SqlDbType.NVarChar) { Value = userForRegistration.FirstName },
-          new SqlParameter("@LastName", SqlDbType.NVarChar) { Value = userForRegistration.LastName },
-          new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
-          new SqlParameter("@Gender", SqlDbType.NVarChar) { Value = userForRegistration.Gender },
-          new SqlParameter("@Active", SqlDbType.Bit) { Value = 1 }
-        };
-        if (_dapper.ExecuteSqlWithParameters(sqlAddUser, userParameters))
-        {
-          return Ok("User registered successfully.");  // Return 200 OK if registration succeeded
-        }
-        throw new Exception("Failed to add user.");
+        throw new Exception("Failed to register user.");   // If insert failed, throw an error
       }
-      throw new Exception("Failed to register user.");   // If insert failed, throw an error
+      
+      string sqlAddUser = @"INSERT INTO TutorialAppSchema.Users (
+              [FirstName],
+              [LastName],
+              [Email],
+              [Gender],
+              [Active] 
+            ) VALUES (@FirstName, @LastName, @Email, @Gender, @Active)";
+
+      var userParameters = new List<SqlParameter>
+      {
+        new SqlParameter("@FirstName", SqlDbType.NVarChar) { Value = userForRegistration.FirstName },
+        new SqlParameter("@LastName", SqlDbType.NVarChar) { Value = userForRegistration.LastName },
+        new SqlParameter("@Email", SqlDbType.NVarChar) { Value = userForRegistration.Email },
+        new SqlParameter("@Gender", SqlDbType.NVarChar) { Value = userForRegistration.Gender },
+        new SqlParameter("@Active", SqlDbType.Bit) { Value = 1 }
+      };
+      
+      if (_dapper.ExecuteSqlWithParameters(sqlAddUser, userParameters))
+      {
+        return Ok("User registered successfully.");  // Return 200 OK if registration succeeded
+      }
+      throw new Exception("Failed to add user.");
     }
 
+
       
-    
-
-
-
     [AllowAnonymous]
     [HttpPost("Login")]  // POST /auth/login
     public IActionResult Login(UserForLoginDto userForLogin)
