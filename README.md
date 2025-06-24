@@ -30,8 +30,8 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/KevinRen64/DotNetApiUserManagementWithDapper.git
-   cd DotNetApiUserManagementWithDapper
+   git clone https://github.com/KevinRen64/UserManagement.git
+   cd UserManagement
 2. **Configure your database connection**
    Update the appsettings.json file with your database connection string:
    ```bash
