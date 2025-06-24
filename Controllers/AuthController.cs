@@ -154,12 +154,21 @@ namespace DotNetApi.Controllers
     public IActionResult RefreshToken()
     {
       // 1. Extract user ID from JWT claims
-      string userId = User.FindFirst("userId")?.Value + "";
+      //string userId = User.FindFirst("userId")?.Value + "";
+      var userIdClaim = User.FindFirst("userId")?.Value;
+      if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+      {
+          return Unauthorized("Invalid or missing user ID claim.");
+      }
 
       // 2. Confirm user exists
       string userIdSql = "SELECT userId FROM TutorialAppSchema.Users WHERE UserId = @UserId";
       var parameter = new { UserId = userId };
-      int userIdFromDb = _dapper.LoadDataSingleWithParameters<int>(userIdSql, parameter);
+      int? userIdFromDb = _dapper.LoadDataSingleWithParameters<int?>(userIdSql, parameter);
+      if (!userIdFromDb.HasValue)
+      {
+        return Unauthorized("User not found.");
+      }
 
       // 3. Return new JWT token
       return Ok(new Dictionary<string, string>
