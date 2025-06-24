@@ -98,9 +98,9 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
 ## Project Structure
   Controllers/ — API controllers handling HTTP requests
   
-  Data/ # Dapper database context and helper classes
+  Data/ — Dapper database context and helper classes
   
-  Dtos/ # Data Transfer Objects (DTOs) for user input/output
+  Dtos/ — Data Transfer Objects (DTOs) for user input/output
   
   Models/ — Data models representing users
   
