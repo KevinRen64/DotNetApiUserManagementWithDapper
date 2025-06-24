@@ -96,15 +96,15 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
 
 
 ## Project Structure
-  Controllers/ — API controllers handling HTTP requests
-  
-  Data/ — Dapper database context and helper classes
-  
-  Dtos/ — Data Transfer Objects (DTOs) for user input/output
-  
-  Models/ — Data models representing users
-  
-  appsettings.json — Configuration file
+
+   DotNetApiUserManagementWithDapper/
+   │
+   ├── Controllers/        # UserController, AuthController
+   ├── Data/               # Dapper DB context
+   ├── Dtos/               # DTOs for safe data transfer
+   ├── Models/             # DB entity models
+   ├── appsettings.json    # Config and connection strings
+
 
 
 
