@@ -34,7 +34,7 @@ namespace DotNetApi.Controllers
       if (userForRegistration.Password == userForRegistration.PasswordConfirm)
       {
         // SQL query to check if the email already exists in the database
-        string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = '" + userForRegistration.Email + "'";
+        //string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = '" + userForRegistration.Email + "'";
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = @Email";
         // Execute the SQL query using Dapper and get list of existing emails
