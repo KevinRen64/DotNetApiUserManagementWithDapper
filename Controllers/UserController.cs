@@ -1,9 +1,9 @@
-using DotNetApi.Data;
-using DotNetApi.Dtos;
+using UserManagement.Data;
+using UserManagement.Dtos;
 using Microsoft.AspNetCore.Mvc;
-using DotNetApi.Models;
+using UserManagement.Models;
 
-namespace DotetApi.Controllers;
+namespace UserManagement.Controllers;
 
 [ApiController]  // Indicates this class defines a Web API controller
 [Route("[controller]")]  // Route will be based on the controller name: /User

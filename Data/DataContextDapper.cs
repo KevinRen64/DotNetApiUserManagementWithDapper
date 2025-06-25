@@ -2,7 +2,7 @@ using System.Data;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
-namespace DotNetApi.Data
+namespace UserManagement.Data
 {
 
   // Dapper-based data context for executing SQL queries and commands

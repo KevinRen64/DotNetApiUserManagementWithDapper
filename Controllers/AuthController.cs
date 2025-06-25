@@ -3,15 +3,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using DotNetApi.Data;
-using DotNetApi.Dtos;
+using UserManagement.Data;
+using UserManagement.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
+using UserManagement.Helpers;
 
-namespace DotNetApi.Controllers
+namespace UserManagement.Controllers
 {
   [Authorize]   // Require authentication by default for all endpoints in this controller
   [ApiController]  // Enables automatic model validation and better routing
@@ -19,11 +20,12 @@ namespace DotNetApi.Controllers
   public class AuthController : ControllerBase
   {
     private readonly DataContextDapper _dapper;  // Dapper database context
-    private readonly IConfiguration _config;  // Access to appsettings.json
+    private readonly AuthHelper _authHelper;
+
     public AuthController(IConfiguration config)   // Initialize Dapper with config
     {
       _dapper = new DataContextDapper(config);
-      _config = config;
+      _authHelper = new AuthHelper(config);
     }
 
 
@@ -55,7 +57,7 @@ namespace DotNetApi.Controllers
       }
 
       // Call the GetPasswordHash() to hash the password
-      byte[] passwordHash = GetPasswordHash(userForRegistration.Password, passwordSalt);
+      byte[] passwordHash = _authHelper.GetPasswordHash(userForRegistration.Password, passwordSalt);
 
       // Insert into Auth table
       string sqlAddAuth = @"
@@ -125,7 +127,7 @@ namespace DotNetApi.Controllers
       }
 
       //2. Recalculate hash with the provided password and stored salt
-      byte[] passwordHash = GetPasswordHash(userForLogin.Password, userForLoginConfirmation.PasswordSalt);
+      byte[] passwordHash = _authHelper.GetPasswordHash(userForLogin.Password, userForLoginConfirmation.PasswordSalt);
 
       //3. Compare hashes byte by byte
       for (int index = 0; index < passwordHash.Length; index++)
@@ -144,7 +146,7 @@ namespace DotNetApi.Controllers
       //5. Return JWT token on successful login
       return Ok(new Dictionary<string, string>
       {
-        {"token", CreateToken(userId)}
+        {"token", _authHelper.CreateToken(userId)}
       });
     }
 
@@ -173,65 +175,8 @@ namespace DotNetApi.Controllers
       // 3. Return new JWT token
       return Ok(new Dictionary<string, string>
       {
-        {"token", CreateToken(userIdFromDb.Value)}
+        {"token", _authHelper.CreateToken(userIdFromDb.Value)}
       });
-    }
-
-
-
-
-    // Helper method to hash a password with salt and app secret key using PBKDF2
-    private byte[] GetPasswordHash(string password, byte[] passwordSalt)
-    {
-      // Combine salt and a secret password key from appsettings.json
-      string passwordSaltPlusString = _config.GetSection("AppSettings:PasswordKey").Value + Convert.ToBase64String(passwordSalt);
-
-      // PBKDF2 hashing with HMACSHA256
-      return KeyDerivation.Pbkdf2(
-        password: password,
-        salt: Encoding.ASCII.GetBytes(passwordSaltPlusString),  
-        prf: KeyDerivationPrf.HMACSHA256,  
-        iterationCount: 1000000,  // Secure number of iterations
-        numBytesRequested: 256 / 8  // 32-byte output
-      );
-    }
-
-
-    // Method to create a JWT token for a given userId
-    private string CreateToken(int userId)
-    {
-      // 1. Define claims for the token
-      Claim[] claims = new Claim[] {
-        new Claim("userId", userId.ToString())  // Custom userId claim
-      };
-
-      // 2. Create security key using secret from config
-      string? tokenKeyString = _config.GetSection("Appsettings:TokenKey").Value;
-      SymmetricSecurityKey tokenKey = new SymmetricSecurityKey(
-          Encoding.UTF8.GetBytes(
-            tokenKeyString != null ? tokenKeyString : ""
-          )
-        );
-
-      // 3. Create signing credentials
-      SigningCredentials credentials = new SigningCredentials(
-          tokenKey,
-          SecurityAlgorithms.HmacSha512Signature
-        );
-
-      // 4. Define token details
-      SecurityTokenDescriptor descriptor = new SecurityTokenDescriptor()
-      {
-        Subject = new ClaimsIdentity(claims),
-        SigningCredentials = credentials,
-        Expires = DateTime.Now.AddDays(1)   // Token expires in 1 day
-      };
-      
-      // 5. Generate token
-      JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-      SecurityToken token = tokenHandler.CreateToken(descriptor);
-
-      return tokenHandler.WriteToken(token);  // Return token as string
     }
   }
 }

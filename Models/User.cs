@@ -1,4 +1,4 @@
-namespace DotNetApi.Models
+namespace UserManagement.Models
 {
   public partial class User
   {
