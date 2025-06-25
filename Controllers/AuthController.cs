@@ -173,7 +173,7 @@ namespace DotNetApi.Controllers
       // 3. Return new JWT token
       return Ok(new Dictionary<string, string>
       {
-        {"token", CreateToken(userIdFromDb)}
+        {"token", CreateToken(userIdFromDb.Value)}
       });
     }
 
