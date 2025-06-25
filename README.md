@@ -84,5 +84,6 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
    ├── Controllers/        # UserController, AuthController
    ├── Data/               # Dapper DB context
    ├── Dtos/               # DTOs for safe data transfer
+   ├── Helpers/            # Helper method: GetPasswordHash(), CreateToken()
    ├── Models/             # DB entity models
    ├── appsettings.json    # Config and connection strings
