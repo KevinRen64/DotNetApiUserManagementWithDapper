@@ -70,10 +70,11 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
    | DELETE      | `/User/DeleteUser/{id}`       | Deletes a user by userId      |
 
    Auth Management
-   | HTTP Method | Endpoint                      | Description                           |
-   | ----------- | ----------------------------- | -----------------------------         |
-   | POST        | `/Auth/Register` | Registers a new user and stores hashed credentials |
-   | POST        | `/Auth/Login`    | Verifies credentials and returns success or error  |
+   | HTTP Method | Endpoint                      | Description                                        |
+   | ----------- | ----------------------------- | ------------------------------------------------   |
+   | POST        | `/Auth/Register`              | Registers a new user and stores hashed credentials |
+   | POST        | `/Auth/Login`                 | Verifies credentials and returns success or error  |
+   | GET         | `/Auth/RefreshToken`          | Refresh a JWT Token for an authenticated user      |
 
 
 ## Project Structure
