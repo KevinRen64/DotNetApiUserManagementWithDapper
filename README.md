@@ -53,6 +53,15 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
      PasswordHash VARBINARY(MAX),
      PasswordSalt VARBINARY(MAX),
    );
+
+   CREATE TABLE TutorialAppSchema.Posts (
+    PostId INT IDENTITY(1,1),
+    UserId INT,
+    PostTitle NVARCHAR(255),
+    PostContent NVARCHAR(MAX),
+    PostCreated DATETIME,
+    PostUpdated DATETIME
+   ;)     
 4. **Build and run the project**
    ```bash
    dotnet build

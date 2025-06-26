@@ -42,19 +42,19 @@ namespace UserManagement.Data
     //Returns a single record (one row) from the database
     public T LoadDataSingleWithParameters<T>(string sql, object parameters)
     {
-          using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
-          {
-            return dbConnection.QuerySingleOrDefault<T>(sql, parameters);
-        }
+      using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+      {
+        return dbConnection.QuerySingleOrDefault<T>(sql, parameters);
+      }
     }
 
     // Returns multiple records (zero or more rows) from the database.
     public IEnumerable<T> LoadDataWithParameters<T>(string sql, object parameters)
     {
-        using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
-        {
-            return dbConnection.Query<T>(sql, parameters);
-        }
+      using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+      {
+        return dbConnection.Query<T>(sql, parameters);
+      }
     }
 
 
@@ -78,8 +78,9 @@ namespace UserManagement.Data
       // Execute the command and return the number of affected rows
       return dbConnection.Execute(sql);
     }
-    
-    // Executes a SQL command with parameters
+
+
+    // Executes a SQL command with a list of parameters
     public bool ExecuteSqlWithParameters(string sql, List<SqlParameter> parameters)
     {
       // Create a new SQL command using the raw SQL query passed in
@@ -107,6 +108,19 @@ namespace UserManagement.Data
       // Return true if at least one row was affected, otherwise false
       return rowsAffected > 0;
     }
+    
+//     public bool ExecuteSqlWithParameters(string sql, List<SqlParameter> parameters)
+// {
+//     using var connection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+//     using var command = new SqlCommand(sql, connection);
+
+//     command.Parameters.AddRange(parameters.ToArray());
+
+//     connection.Open();
+//     int rowsAffected = command.ExecuteNonQuery();
+
+//     return rowsAffected > 0;
+// }
 
   }
 }
