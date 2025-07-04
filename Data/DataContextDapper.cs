@@ -19,109 +19,72 @@ namespace UserManagement.Data
     }
 
 
-    // Generic method to load multiple rows of data from the database
+    // ===============================================
+    // Executes a SQL SELECT that returns multiple rows
+    // ===============================================
     public IEnumerable<T> LoadData<T>(string sql)
     {
-      // Create a new SQL connection using the connection string
+      // Establish connection using the connection string
       IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
 
-      // Execute the SQL query and return the result as IEnumerable<T>
+      // Use Dapper to execute the query and map results to type T
       return dbConnection.Query<T>(sql);
     }
 
 
-    // Generic method to load a single row of data from the database
-    public T LoadDataSingle<T>(string sql)
-    {
-      IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-
-      // Execute the SQL query and return a single result
-      return dbConnection.QuerySingle<T>(sql);
-    }
-
-    //Returns a single record (one row) from the database
+    // ===============================================
+    // Executes a SQL SELECT with parameters and returns a single row
+    // ===============================================
     public T LoadDataSingleWithParameters<T>(string sql, object parameters)
     {
       using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
       {
+        // Query for a single object or null if no match found
         return dbConnection.QuerySingleOrDefault<T>(sql, parameters);
       }
     }
 
-    // Returns multiple records (zero or more rows) from the database.
+
+    // ===============================================
+    // Executes a SQL SELECT with parameters and returns multiple rows
+    // ===============================================
     public IEnumerable<T> LoadDataWithParameters<T>(string sql, object parameters)
     {
       using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
       {
+        // Use Dapper to execute the query and return a list of T
         return dbConnection.Query<T>(sql, parameters);
       }
     }
 
 
-
-    // Executes a SQL command that does not return data (e.g., INSERT, UPDATE, DELETE)
-    // Returns true if at least one row was affected
-    public bool ExecuteSql(string sql)
+    // ======================================================
+    // Executes a SQL command (like DELETE) with a single param object
+    // Returns the number of rows affected
+    // ======================================================
+    public int ExecuteSqlWithSingleParameter(string sql, object parameters)
     {
-      IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-
-      // Execute the command and check if rows were affected
-      return dbConnection.Execute(sql) > 0;
+      using (SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+      {
+        return dbConnection.Execute(sql, parameters);
+      }
     }
 
 
-    // Executes a SQL command and returns the number of rows affected
-    public int ExecuteSqlWithRowCount(string sql)
-    {
-      IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-
-      // Execute the command and return the number of affected rows
-      return dbConnection.Execute(sql);
-    }
-
-
-    // Executes a SQL command with a list of parameters
+    // ======================================================
+    // Executes SQL (INSERT, UPDATE, DELETE) using SqlParameter list
+    // Safer than string interpolation—prevents SQL injection
+    // ======================================================
     public bool ExecuteSqlWithParameters(string sql, List<SqlParameter> parameters)
     {
-      // Create a new SQL command using the raw SQL query passed in
-      SqlCommand commandWithParams = new SqlCommand(sql);
-
-      // Add each parameter from the provided list to the command to safely pass values
-      foreach (SqlParameter parameter in parameters)
-      {
-        commandWithParams.Parameters.Add(parameter);  // Prevents SQL injection
-      }
-
-      // Create a new SQL connection using the connection string from configuration
-      SqlConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-      dbConnection.Open();  // Open the database connection
-
-      // Assign the open connection to the SQL command
-      commandWithParams.Connection = dbConnection;
-
-      // Execute the SQL command (e.g., INSERT, UPDATE, DELETE), and get the number of rows affected
-      int rowsAffected = commandWithParams.ExecuteNonQuery();
-
-      // Close the connection after execution
-      dbConnection.Close();
-
-      // Return true if at least one row was affected, otherwise false
+      using var dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+      using var command = new SqlCommand(sql, dbConnection);
+      // Add parameters safely
+      command.Parameters.AddRange(parameters.ToArray());
+      dbConnection.Open();
+      int rowsAffected = command.ExecuteNonQuery();
       return rowsAffected > 0;
     }
-    
-//     public bool ExecuteSqlWithParameters(string sql, List<SqlParameter> parameters)
-// {
-//     using var connection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-//     using var command = new SqlCommand(sql, connection);
-
-//     command.Parameters.AddRange(parameters.ToArray());
-
-//     connection.Open();
-//     int rowsAffected = command.ExecuteNonQuery();
-
-//     return rowsAffected > 0;
-// }
-
   }
 }
 

@@ -2,6 +2,8 @@ using UserManagement.Data;
 using UserManagement.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using UserManagement.Models;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace UserManagement.Controllers;
 
@@ -10,8 +12,8 @@ namespace UserManagement.Controllers;
 public class UserController : ControllerBase
 {
 
-  // Instance of the Dapper data context for database operations
-  DataContextDapper _dapper;
+  
+  private readonly DataContextDapper _dapper;  // Dapper context instance for database operations
 
   // Constructor that takes IConfiguration to initialize Dapper with connection string
   public UserController(IConfiguration config)
@@ -19,7 +21,11 @@ public class UserController : ControllerBase
     _dapper = new DataContextDapper(config);
   }
 
-  // Endpoint to get a list of all users
+
+  // ================================
+  // GET: /User/GetUsers
+  // Retrieves a list of all users
+  // ================================
   [HttpGet("GetUsers")]
   public IEnumerable<User> GetUsers()
   {
@@ -31,13 +37,16 @@ public class UserController : ControllerBase
         [Gender],
         [Active] 
       FROM TutorialAppSchema.Users";
-    // Executes the SQL and returns a list of users
+    // Executes the SQL and returns a list of user objects
     IEnumerable<User> users = _dapper.LoadData<User>(sql);
     return users;
   }
 
 
-  // Endpoint to get a single user by userId
+  // ========================================
+  // GET: /User/GetUsers/{userId}
+  // Retrieves a single user by their UserId
+  // ========================================
   [HttpGet("GetUsers/{userId}")]
   public User GetSingleUser(int userId)
   {
@@ -49,88 +58,110 @@ public class UserController : ControllerBase
         [Gender],
         [Active] 
       FROM TutorialAppSchema.Users
-      WHERE UserId = " + userId.ToString();
+      WHERE UserId = @UserId";
 
-    // Executes the SQL and returns a single user
-    User user = _dapper.LoadDataSingle<User>(sql);
-    return user;
+    var userIdParam = new { UserId = userId };
+    // Use parameterized query to safely retrieve a single user
+    return _dapper.LoadDataSingleWithParameters<User>(sql, userIdParam);
   }
 
 
-  // PUT endpoint to edit/update an existing user
+  // ===========================================
+  // PUT: /User/EditUser
+  // Updates an existing user's data by UserId
+  // ===========================================
   [HttpPut("EditUser")]
   public IActionResult EditUser(User user)
   {
     // SQL statement to update user data by UserId
-    // WARNING: This uses string concatenation which is vulnerable to SQL Injection attacks
     string sql = @"
     UPDATE TutorialAppSchema.Users
-      SET [FirstName] = '" + user.FirstName +
-          "', [LastName] = '" + user.LastName +
-          "', [Email] = '" + user.Email +
-          "', [Gender] = '" + user.Gender +
-          "',[Active] = '" + user.Active +
-      "' WHERE UserId = " + user.UserId;
+      SET [FirstName] = @FirstName,
+          [LastName] = @LastName,
+          [Email] = @Email,
+          [Gender] = @Gender,
+          [Active] = @Active
+      WHERE UserId = @UserId";
 
-    // Execute the update statement
-    if (_dapper.ExecuteSql(sql))
-    {
-      // Return HTTP 200 OK if update succeeded
-      return Ok();
-    }
-    // Throw exception if update failed
-    throw new Exception("Failed to Update User");
+    // Build parameter list using safe SqlParameter objects
+    var putParameter = new List<SqlParameter>
+      {
+        new SqlParameter("@FirstName", SqlDbType.NVarChar) { Value = user.FirstName},
+        new SqlParameter("@LastName", SqlDbType.NVarChar) { Value = user.LastName},
+        new SqlParameter("@Email", SqlDbType.NVarChar) { Value = user.Email },
+        new SqlParameter("@Gender", SqlDbType.NVarChar) { Value = user.Gender },
+        new SqlParameter("@Active", SqlDbType.NVarChar) { Value = user.Active },
+        new SqlParameter("@UserId", SqlDbType.Int) { Value = user.UserId }
+      };    
+
+    // Execute the update statement and return result
+      if (_dapper.ExecuteSqlWithParameters(sql, putParameter))
+      {
+        return Ok();
+      }
+      throw new Exception("Failed to update Post");
   }
 
 
-  // POST endpoint to add a new user
+  // ============================================
+  // POST: /User/AddUser
+  // Adds a new user using a DTO (UserToAddDto)
+  // ============================================
   [HttpPost("AddUser")]
   public IActionResult AddUser(UserToAddDto user)
   {
 
-    // SQL statement to insert a new user record
-    // WARNING: This uses string concatenation which is vulnerable to SQL Injection attacks
     string sql = @"INSERT INTO TutorialAppSchema.Users (
             [FirstName],
             [LastName],
             [Email],
             [Gender],
             [Active] 
-          ) VALUES ( " +
-          "'" + user.FirstName +
-          "', '" + user.LastName +
-          "', '" + user.Email +
-          "', '" + user.Gender +
-          "', '" + user.Active +
-      "')";
+          ) VALUES ( 
+            @FirstName,
+            @LastName,
+            @Email,
+            @Gender,
+            @Active
+          )";
 
-    // Execute the insert statement
-    if (_dapper.ExecuteSql(sql))
-    {
-      // Return HTTP 200 OK if insert succeeded
-      return Ok();
-    }
-    // Throw exception if insert failed
-    throw new Exception("Failed to Add User");
+    // Create SQL parameters from the DTO
+    var postParameter = new List<SqlParameter>
+      {
+        new SqlParameter("@FirstName", SqlDbType.NVarChar) { Value = user.FirstName},
+        new SqlParameter("@LastName", SqlDbType.NVarChar) { Value = user.LastName},
+        new SqlParameter("@Email", SqlDbType.NVarChar) { Value = user.Email },
+        new SqlParameter("@Gender", SqlDbType.NVarChar) { Value = user.Gender },
+        new SqlParameter("@Active", SqlDbType.NVarChar) { Value = user.Active },
+      };   
+
+    // Execute the insert statement and return result
+      if (_dapper.ExecuteSqlWithParameters(sql, postParameter))
+      {
+        return Ok();
+      }
+      throw new Exception("Failed to add Post");
   }
 
 
-  // SQL statement to delete a user by userId
-  // WARNING: This uses string concatenation which is vulnerable to SQL Injection attacks
+  // ========================================
+  // DELETE: /User/DeleteUser/{userId}
+  // Deletes a user by their UserId
+  // ========================================
   [HttpDelete("DeleteUser/{userId}")]
   public IActionResult RemoveUser(int userId)
   {
     string sql = @"
       DELETE FROM TutorialAppSchema.Users
-      WHERE UserId = " + userId.ToString();
+      WHERE UserId = @UserId";
+
+    var userIdParam = new { UserId = userId };
 
     // Execute the remove statement
-    if (_dapper.ExecuteSql(sql))
+    if (_dapper.ExecuteSqlWithSingleParameter(sql, userIdParam) > 0)
     {
-      // Return HTTP 200 OK if insert succeeded
-      return Ok();
+      return Ok();  // 200 OK if successful
     }
-    // Throw exception if insert failed
     throw new Exception("Failed to Remove User");
   }
 }

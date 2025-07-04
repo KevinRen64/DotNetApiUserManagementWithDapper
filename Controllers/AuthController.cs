@@ -14,33 +14,38 @@ using UserManagement.Helpers;
 
 namespace UserManagement.Controllers
 {
-  [Authorize]   // Require authentication by default for all endpoints in this controller
-  [ApiController]  // Enables automatic model validation and better routing
-  [Route("[controller]")]  // Route pattern; this will be '/auth' because the controller is named AuthController
+  // Secures all endpoints by default; only explicitly allowed endpoints are public
+  [Authorize]   
+  [ApiController]  
+  [Route("[controller]")]  // Base route: /auth
   public class AuthController : ControllerBase
   {
-    private readonly DataContextDapper _dapper;  // Dapper database context
+    private readonly DataContextDapper _dapper;
     private readonly AuthHelper _authHelper;
 
-    public AuthController(IConfiguration config)   // Initialize Dapper with config
+    // Constructor: injects configuration into Dapper and AuthHelper
+    public AuthController(IConfiguration config)
     {
       _dapper = new DataContextDapper(config);
       _authHelper = new AuthHelper(config);
     }
 
 
-
-    [AllowAnonymous]  // Allow unauthenticated access for registration
-    [HttpPost("Register")]  // POST /auth/register
+    // ===============================
+    // POST /auth/register
+    // Registers a new user (public)
+    // ===============================
+    [AllowAnonymous]  
+    [HttpPost("Register")] 
     public IActionResult Register(UserForRegistrationDto userForRegistration)
     {
-      // Check if password and password confirmation match
+      // 1. Validate password match
       if (userForRegistration.Password != userForRegistration.PasswordConfirm)
       {
         throw new Exception("Password do not match!");   // If passwords don't match, throw an error
       }
       
-      // Check if email already exists
+      // 2. Check for existing email
       string sqlCheckUserExists = "SELECT Email FROM TutorialAppSchema.Auth WHERE Email = @Email";
       var emailParam = new { Email = userForRegistration.Email };
       IEnumerable<string> existingUsers = _dapper.LoadDataWithParameters<string>(sqlCheckUserExists, emailParam);
@@ -49,17 +54,17 @@ namespace UserManagement.Controllers
           return Conflict("A user with this email already exists.");
       }
 
-      // Generate salt
+      // 3. Generate password salt
       byte[] passwordSalt = new byte[128 / 8];
       using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
       {
         rng.GetNonZeroBytes(passwordSalt);  // Fill the salt with non-zero random bytes
       }
 
-      // Call the GetPasswordHash() to hash the password
+      // 4. Hash the password using the salt
       byte[] passwordHash = _authHelper.GetPasswordHash(userForRegistration.Password, passwordSalt);
 
-      // Insert into Auth table
+      // 5. Save credentials to Auth table
       string sqlAddAuth = @"
       INSERT INTO TutorialAppSchema.Auth (
           [Email],
@@ -84,6 +89,7 @@ namespace UserManagement.Controllers
         throw new Exception("Failed to register user.");   // If insert failed, throw an error
       }
       
+      // 6. Save user profile to Users table
       string sqlAddUser = @"INSERT INTO TutorialAppSchema.Users (
               [FirstName],
               [LastName],
@@ -109,12 +115,15 @@ namespace UserManagement.Controllers
     }
 
 
-      
+    // =============================
+    // POST /auth/login
+    // Authenticates a user (public)
+    // =============================      
     [AllowAnonymous]
-    [HttpPost("Login")]  // POST /auth/login
+    [HttpPost("Login")]  
     public IActionResult Login(UserForLoginDto userForLogin)
     {
-      //1. Query for password hash and salt for this email
+      // 1. Retrieve stored hash and salt for the email
       string sqlForHashAndSalt = @"SELECT 
             [PasswordHash],
             [PasswordSalt] FROM TutorialAppSchema.Auth WHERE Email = @Email";
@@ -126,10 +135,10 @@ namespace UserManagement.Controllers
         return StatusCode(401, "Invalid Email");  // Email not found
       }
 
-      //2. Recalculate hash with the provided password and stored salt
+      // 2. Recalculate hash from input password
       byte[] passwordHash = _authHelper.GetPasswordHash(userForLogin.Password, userForLoginConfirmation.PasswordSalt);
 
-      //3. Compare hashes byte by byte
+      // 3. Compare hashes byte-by-byte
       for (int index = 0; index < passwordHash.Length; index++)
       {
         // If any byte does not match, return HTTP 401 Unauthorized with "Incorrect Password"
@@ -139,11 +148,11 @@ namespace UserManagement.Controllers
         }
       }
 
-      //4. Get the user's ID
+      // 4. Get UserId to include in JWT
       string userIdSql = "SELECT UserId FROM TutorialAppSchema.Users WHERE Email = @Email";
       int userId = _dapper.LoadDataSingleWithParameters<int>(userIdSql, parameter);
 
-      //5. Return JWT token on successful login
+      // 5. Generate and return JWT token
       return Ok(new Dictionary<string, string>
       {
         {"token", _authHelper.CreateToken(userId)}
@@ -151,19 +160,21 @@ namespace UserManagement.Controllers
     }
 
 
-
-    [HttpGet("RefreshToken")]  // GET /auth/refreshToken
+    // =============================
+    // GET /auth/refreshToken
+    // Issues a new JWT if user is valid
+    // =============================
+    [HttpGet("RefreshToken")]
     public IActionResult RefreshToken()
     {
-      // 1. Extract user ID from JWT claims
-      //string userId = User.FindFirst("userId")?.Value + "";
+      // 1. Extract userId from claims in JWT
       var userIdClaim = User.FindFirst("userId")?.Value;
       if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
       {
           return Unauthorized("Invalid or missing user ID claim.");
       }
 
-      // 2. Confirm user exists
+      // 2. Verify user still exists in DB
       string userIdSql = "SELECT userId FROM TutorialAppSchema.Users WHERE UserId = @UserId";
       var parameter = new { UserId = userId };
       int? userIdFromDb = _dapper.LoadDataSingleWithParameters<int?>(userIdSql, parameter);
