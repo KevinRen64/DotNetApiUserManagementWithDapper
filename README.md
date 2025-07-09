@@ -84,6 +84,16 @@ A RESTful API for user management built with .NET Core and Dapper. This project 
    | POST        | `/Auth/Register`              | Registers a new user and stores hashed credentials |
    | POST        | `/Auth/Login`                 | Verifies credentials and returns success or error  |
    | GET         | `/Auth/RefreshToken`          | Refresh a JWT Token for an authenticated user      |
+   
+   Post Management
+   | HTTP Method | Endpoint                      | Description                                        |
+   | ----------- | ----------------------------- | ------------------------------------------------   |
+   | GET         | `/Post/GetPosts`              | Retrieves all posts                                |
+   | GET         | `/Post/GetPost/{id}`          | Retrieves a post by postId                         |
+   | POST        | `/Post/AddPost`               | Adds a new post                                    |
+   | PUT         | `/Post/EditPost`              | Updates an existing post                           |
+   | DELETE      | `/Post/DeletePost/{id}`       | Deletes a post by postId                           |
+
 
 
 ## Project Structure
